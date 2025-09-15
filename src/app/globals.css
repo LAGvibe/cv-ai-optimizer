@@ -116,7 +116,234 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Modern SaaS Theme with Premium Brown/Gold */
+.earth-theme {
+  /* Backgrounds */
+  --earth-bg: #fefefe;
+  --earth-surface: #ffffff;
+  --earth-surface-elevated: #fbfbfb;
+
+  /* Borders */
+  --earth-border: #f0f0f0;
+  --earth-border-strong: #e8e8e8;
+
+  /* Text Colors */
+  --earth-text: #1a1a1a;
+  --earth-text-secondary: #4a5568;
+  --earth-text-muted: #718096;
+  --earth-text-light: #a0aec0;
+
+  /* Brand Colors - Brown/Gold Gradient */
+  --earth-primary: #2d1810;
+  --earth-secondary: #4a2c1a;
+  --earth-accent: #8b5a3c;
+
+  /* Gold Gradient System */
+  --earth-gold: #d4af37;
+  --earth-gold-light: #f4e7a1;
+  --earth-gold-dark: #b8941f;
+  --earth-gold-gradient: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+  --earth-gold-gradient-hover: linear-gradient(135deg, #e6c659 0%, #c9a532 100%);
+
+  /* Button Colors */
+  --earth-button-primary: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+  --earth-button-primary-hover: linear-gradient(135deg, #e6c659 0%, #c9a532 100%);
+  --earth-button-primary-text: #2d1810;
+
+  /* Shadows & Effects */
+  --earth-shadow-sm: 0 1px 2px 0 rgba(45, 24, 16, 0.05);
+  --earth-shadow: 0 4px 6px -1px rgba(45, 24, 16, 0.1), 0 2px 4px -1px rgba(45, 24, 16, 0.06);
+  --earth-shadow-lg: 0 10px 15px -3px rgba(45, 24, 16, 0.1), 0 4px 6px -2px rgba(45, 24, 16, 0.05);
+  --earth-shadow-gold: 0 4px 14px 0 rgba(212, 175, 55, 0.25);
+
+  /* Interactive States */
+  --earth-hover-overlay: rgba(212, 175, 55, 0.1);
+  --earth-focus-ring: rgba(212, 175, 55, 0.3);
+
+  /* Fonts */
+  --font-heading: var(--font-outfit);
+  --font-body: var(--font-inter);
+}
+
+/* Annotations colors */
+.annotation-red {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 2px solid #ef4444;
+}
+
+.annotation-yellow {
+  background-color: rgba(245, 158, 11, 0.2);
+  border: 2px solid #f59e0b;
+}
+
+.annotation-orange {
+  background-color: rgba(249, 115, 22, 0.2);
+  border: 2px solid #f97316;
+}
+
+.annotation-blue {
+  background-color: rgba(59, 130, 246, 0.2);
+  border: 2px solid #3b82f6;
+}
+
+/* Modern SaaS Components */
+.btn-primary {
+  background: var(--earth-button-primary);
+  color: var(--earth-button-primary-text);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--earth-shadow-gold);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  background: var(--earth-button-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.card-modern {
+  background: var(--earth-surface);
+  border: 1px solid var(--earth-border);
+  border-radius: 16px;
+  box-shadow: var(--earth-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-modern:hover {
+  border-color: var(--earth-border-strong);
+  box-shadow: var(--earth-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-elevated {
+  background: var(--earth-surface-elevated);
+  border: 1px solid var(--earth-border-strong);
+  border-radius: 20px;
+  box-shadow: var(--earth-shadow-lg);
+}
+
+.heading-gradient {
+  background: linear-gradient(135deg, var(--earth-primary) 0%, var(--earth-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: var(--font-heading);
+}
+
+.text-gradient {
+  background: var(--earth-gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.upload-zone {
+  border: 2px dashed var(--earth-border-strong);
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--earth-surface) 0%, var(--earth-surface-elevated) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone:hover {
+  border-color: var(--earth-gold);
+  background: linear-gradient(145deg, var(--earth-surface-elevated) 0%, var(--earth-surface) 100%);
+  box-shadow: var(--earth-shadow-gold);
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, var(--earth-hover-overlay) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.upload-zone:hover::before {
+  opacity: 1;
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.icon-gold {
+  color: var(--earth-gold);
+  filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.3));
+}
+
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--earth-focus-ring);
+}
+
+/* Animation utilities */
+@keyframes bounce-gentle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }

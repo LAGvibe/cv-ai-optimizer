@@ -1,39 +1,34 @@
-# 🚀 CV Optimizer
+# CV Assist
 
-> **Projet portfolio** - Optimisation de CV par IA pour correspondre à une offre d'emploi
+> **MVP - Day 1** - Interface moderne pour la gestion de CV
 
-## 📖 Concept
+## 📖 Description
 
-Application web qui analyse votre CV et une offre d'emploi pour proposer des améliorations personnalisées. L'IA compare les deux documents et suggère des modifications avec des annotations visuelles.
+Application web moderne développée avec Next.js 15, TypeScript et Tailwind CSS. Interface propre et intuitive pour la gestion de CV avec architecture extensible.
 
-## ✨ Fonctionnalités
+## ✨ Fonctionnalités actuelles
 
-- **Upload de CV** (PDF, DOCX, TXT) avec extraction automatique du texte
-- **Analyse IA** powered by OpenAI pour comparer CV et offre
-- **Annotations visuelles** avec code couleur sur le CV :
-  - 🟢 À conserver - 🟡 À améliorer - 🔴 À supprimer - 🔵 À ajouter
-- **Suggestions détaillées** par sections (compétences, expériences, formulations)
-- **Interface moderne** single-page avec workflow fluide
+- **Landing page** moderne avec design responsive
+- **Dashboard** avec navigation fluide et composants shadcn/ui
+- **Page paramètres** avec informations détaillées
+- **Architecture** Next.js App Router avec TypeScript
+- **UI/UX** soignée avec Tailwind CSS et Lucide icons
 
 ## 🎯 Demo rapide
 
-1. Aller sur la page d'accueil → Cliquer **"Essayer gratuitement"**
-2. Cliquer **"Utiliser des données d'exemple"** (pour tester rapidement)
-3. Cliquer **"Analyser mon CV"** → Voir les résultats avec annotations
+1. Aller sur la page d'accueil → Cliquer **"Voir la démo"**
+2. Explorer le dashboard avec les différents onglets
+3. Consulter les paramètres pour voir la stack technique
 
 ## 🛠 Installation
 
 ```bash
 # Cloner le projet
-git clone https://github.com/votre-username/cv-optimizer.git
-cd cv-optimizer
+git clone https://github.com/votre-username/cv-assist.git
+cd cv-assist
 
 # Installer les dépendances
 npm install
-
-# Configuration
-cp .env.example .env.local
-# Ajouter votre clé OpenAI dans .env.local
 
 # Lancer l'application
 npm run dev
@@ -41,43 +36,34 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
-## 🔧 Configuration
-
-Créer un fichier `.env.local` avec :
-```bash
-OPENAI_API_KEY=sk-votre-cle-openai
-OPENAI_MODEL=gpt-4o-mini
-```
-
 ## 📱 Stack technique
 
-- **Frontend** : Next.js 15, TypeScript, Tailwind CSS
-- **UI** : shadcn/ui components, Lucide icons
-- **IA** : OpenAI API pour l'analyse
-- **Parsing** : pdf-parse, mammoth pour extraction de texte
-- **Validation** : Zod schemas
+- **Framework** : Next.js 15 (App Router)
+- **Language** : TypeScript
+- **Styling** : Tailwind CSS
+- **UI Components** : shadcn/ui
+- **Icons** : Lucide React
+- **Notifications** : Sonner
 
 ## 🎨 Architecture
 
 - **Landing page** (`/`) : Présentation moderne avec call-to-action
-- **Application principale** (`/app`) : Single-page avec 3 états :
-  - **Input** : Upload CV + description poste
-  - **Loading** : Analyse en cours
-  - **Results** : CV annoté + suggestions détaillées
+- **Dashboard** (`/app`) : Interface principale avec tabs et stats
+- **Paramètres** (`/settings`) : Informations sur l'application
 
-## 🎭 Pourquoi ce projet ?
+## 🎭 Objectifs du projet
 
-**Pour les développeurs :**
-- Démontre la maîtrise de Next.js, TypeScript, et patterns modernes
-- Architecture SPA avec gestion d'état React
-- Intégration API (OpenAI) avec gestion d'erreurs
-- UI/UX soignée avec composants réutilisables
+**Démonstration technique :**
+- Maîtrise de Next.js 15 et TypeScript
+- Architecture moderne avec App Router
+- Composants réutilisables et patterns modernes
+- UI/UX professionnelle et responsive
 
-**Pour les RH :**
-- Outil concret et utile pour l'optimisation de CV
-- Interface intuitive et professionnelle
-- Démonstration de capacités techniques appliquées
+**Fondations solides :**
+- Structure extensible pour futures fonctionnalités
+- Code propre avec bonnes pratiques
+- Interface intuitive et moderne
 
 ---
 
-💡 **Projet réalisé pour démontrer des compétences en développement web moderne et en intégration d'IA.**
+💡 **MVP réalisé pour démontrer des compétences en développement web moderne.**
