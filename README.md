@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 CV Optimizer
 
-## Getting Started
+> **Projet portfolio** - Optimisation de CV par IA pour correspondre à une offre d'emploi
 
-First, run the development server:
+## 📖 Concept
+
+Application web qui analyse votre CV et une offre d'emploi pour proposer des améliorations personnalisées. L'IA compare les deux documents et suggère des modifications avec des annotations visuelles.
+
+## ✨ Fonctionnalités
+
+- **Upload de CV** (PDF, DOCX, TXT) avec extraction automatique du texte
+- **Analyse IA** powered by OpenAI pour comparer CV et offre
+- **Annotations visuelles** avec code couleur sur le CV :
+  - 🟢 À conserver - 🟡 À améliorer - 🔴 À supprimer - 🔵 À ajouter
+- **Suggestions détaillées** par sections (compétences, expériences, formulations)
+- **Interface moderne** single-page avec workflow fluide
+
+## 🎯 Demo rapide
+
+1. Aller sur la page d'accueil → Cliquer **"Essayer gratuitement"**
+2. Cliquer **"Utiliser des données d'exemple"** (pour tester rapidement)
+3. Cliquer **"Analyser mon CV"** → Voir les résultats avec annotations
+
+## 🛠 Installation
 
 ```bash
+# Cloner le projet
+git clone https://github.com/votre-username/cv-optimizer.git
+cd cv-optimizer
+
+# Installer les dépendances
+npm install
+
+# Configuration
+cp .env.example .env.local
+# Ajouter votre clé OpenAI dans .env.local
+
+# Lancer l'application
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔧 Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Créer un fichier `.env.local` avec :
+```bash
+OPENAI_API_KEY=sk-votre-cle-openai
+OPENAI_MODEL=gpt-4o-mini
+```
 
-## Learn More
+## 📱 Stack technique
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend** : Next.js 15, TypeScript, Tailwind CSS
+- **UI** : shadcn/ui components, Lucide icons
+- **IA** : OpenAI API pour l'analyse
+- **Parsing** : pdf-parse, mammoth pour extraction de texte
+- **Validation** : Zod schemas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎨 Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Landing page** (`/`) : Présentation moderne avec call-to-action
+- **Application principale** (`/app`) : Single-page avec 3 états :
+  - **Input** : Upload CV + description poste
+  - **Loading** : Analyse en cours
+  - **Results** : CV annoté + suggestions détaillées
 
-## Deploy on Vercel
+## 🎭 Pourquoi ce projet ?
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Pour les développeurs :**
+- Démontre la maîtrise de Next.js, TypeScript, et patterns modernes
+- Architecture SPA avec gestion d'état React
+- Intégration API (OpenAI) avec gestion d'erreurs
+- UI/UX soignée avec composants réutilisables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Pour les RH :**
+- Outil concret et utile pour l'optimisation de CV
+- Interface intuitive et professionnelle
+- Démonstration de capacités techniques appliquées
+
+---
+
+💡 **Projet réalisé pour démontrer des compétences en développement web moderne et en intégration d'IA.**
