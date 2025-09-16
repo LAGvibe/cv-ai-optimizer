@@ -7,45 +7,111 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, Settings, Upload, Target, Zap, Loader2, Eye, FileUp, AlertCircle, Sparkles, ChevronRight, Star } from "lucide-react";
 import { toast } from "sonner";
+import { extractTextFromFile, analyzeCV } from "@/lib/cv-api";
+import { CVAnalysis, TextExtractionResponse } from "@/types/cv-analysis";
 
 type AppState = "upload" | "analyze" | "results";
 
 export default function AppPage(): React.JSX.Element {
     const [appState, setAppState] = useState<AppState>("upload");
     const [cvFile, setCvFile] = useState<File | null>(null);
+    const [cvText, setCvText] = useState<string>("");
     const [jobDescription, setJobDescription] = useState<string>("");
     const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+    const [isExtracting, setIsExtracting] = useState<boolean>(false);
+    const [analysisResult, setAnalysisResult] = useState<CVAnalysis | null>(null);
+    const [extractionResult, setExtractionResult] = useState<TextExtractionResponse | null>(null);
+    const [isDragOver, setIsDragOver] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setCvFile(file);
-            toast.success("CV uploadé avec succès");
+    const processFile = async (file: File): Promise<void> => {
+        setCvFile(file);
+        setIsExtracting(true);
+
+        try {
+            toast.loading("Extraction du texte en cours...", { id: "extract" });
+
+            const result = await extractTextFromFile(file);
+            setCvText(result.text);
+            setExtractionResult(result);
+
+            toast.success("CV analysé avec succès !", { id: "extract" });
             setAppState("analyze");
+        } catch (error) {
+            console.error("Erreur extraction:", error);
+            toast.error(error instanceof Error ? error.message : "Erreur lors de l'extraction", { id: "extract" });
+            setCvFile(null);
+        } finally {
+            setIsExtracting(false);
+        }
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await processFile(file);
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!isExtracting) {
+            setIsDragOver(true);
+        }
+    };
+
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = async (event: React.DragEvent<HTMLDivElement>): Promise<void> => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragOver(false);
+
+        if (isExtracting) return;
+
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            await processFile(files[0]);
         }
     };
 
     const handleAnalyze = async (): Promise<void> => {
-        if (!cvFile || !jobDescription.trim()) {
+        if (!cvText || !jobDescription.trim()) {
             toast.error("Veuillez uploader un CV et saisir une offre d'emploi");
             return;
         }
 
         setIsAnalyzing(true);
-        // Simulation d'appel LLM
-        setTimeout(() => {
-            setIsAnalyzing(false);
+
+        try {
+            toast.loading("Analyse en cours...", { id: "analyze" });
+
+            const result = await analyzeCV(cvText, jobDescription);
+            setAnalysisResult(result.analysis);
+
+            toast.success("Analyse terminée !", { id: "analyze" });
             setAppState("results");
-            toast.success("Analyse terminée !");
-        }, 3000);
+        } catch (error) {
+            console.error("Erreur analyse:", error);
+            toast.error(error instanceof Error ? error.message : "Erreur lors de l'analyse", { id: "analyze" });
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const resetApp = (): void => {
         setAppState("upload");
         setCvFile(null);
+        setCvText("");
         setJobDescription("");
         setIsAnalyzing(false);
+        setIsExtracting(false);
+        setAnalysisResult(null);
+        setExtractionResult(null);
     };
 
     return (
@@ -120,80 +186,60 @@ export default function AppPage(): React.JSX.Element {
                             <p className="text-xl mb-4" style={{ color: "var(--earth-text-secondary)", fontFamily: "var(--font-body)" }}>
                                 Interface moderne pour l'analyse de CV
                             </p>
-                            <p className="text-base" style={{ color: "var(--earth-text-muted)" }}>
+                            <p className="text-base mb-8" style={{ color: "var(--earth-text-muted)" }}>
                                 Uploadez votre CV et commencez l'analyse
                             </p>
+
+                            {/* Progress indicators - Étape 1 */}
+                            <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                    <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
+                                    <span style={{ color: "var(--earth-text-muted)" }}>Étape 1/3</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--earth-border)" }}>
+                                    <div className="h-2 rounded-full transition-all duration-500" style={{ backgroundColor: "var(--earth-gold)", width: "33%" }}></div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-                            {/* Feature Cards */}
-                            <div className="card-modern p-6 text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
-                                    <Target className="w-8 h-8" style={{ color: "var(--earth-primary)" }} />
-                                </div>
-                                <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                    Analyse
-                                </h3>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>
-                                    Analyse de votre CV
-                                </p>
-                            </div>
-                            <div className="card-modern p-6 text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
-                                    <Zap className="w-8 h-8" style={{ color: "var(--earth-primary)" }} />
-                                </div>
-                                <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                    Suggestions
-                                </h3>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>
-                                    Améliorations suggérées
-                                </p>
-                            </div>
-                            <div className="card-modern p-6 text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
-                                    <Eye className="w-8 h-8" style={{ color: "var(--earth-primary)" }} />
-                                </div>
-                                <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                    Résultats
-                                </h3>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>
-                                    Visualisation des résultats
-                                </p>
-                            </div>
-                        </div>
 
                         <div className="card-elevated p-12">
-                            <div className="upload-zone p-16 text-center cursor-pointer relative z-10"
-                                onClick={() => fileInputRef.current?.click()}>
-                                <div className="animate-bounce-gentle">
-                                    <Upload className="w-20 h-20 mx-auto mb-8 icon-gold" />
-                                </div>
+                            <div
+                                className={`upload-zone p-16 text-center cursor-pointer relative z-10 transition-all duration-300 ${isDragOver ? 'border-gold bg-gold-light scale-105' : ''
+                                    }`}
+                                onClick={() => !isExtracting && fileInputRef.current?.click()}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
+                                {isExtracting ? (
+                                    <div className="animate-bounce-gentle">
+                                        <Loader2 className="w-20 h-20 mx-auto mb-8 icon-gold animate-spin" />
+                                    </div>
+                                ) : (
+                                    <div className="animate-bounce-gentle">
+                                        <Upload className="w-20 h-20 mx-auto mb-8 icon-gold" />
+                                    </div>
+                                )}
                                 <h3 className="text-3xl font-bold mb-6 heading-gradient" style={{ fontFamily: "var(--font-heading)" }}>
-                                    Glissez votre CV ici
+                                    {isExtracting ? "Extraction en cours..." : "Glissez votre CV ici"}
                                 </h3>
                                 <p className="text-lg mb-8" style={{ color: "var(--earth-text-secondary)" }}>
-                                    ou cliquez pour sélectionner un fichier
+                                    {isExtracting ? "Analyse du fichier..." : "ou cliquez pour sélectionner un fichier"}
                                 </p>
                                 <div className="flex items-center justify-center gap-6 text-sm" style={{ color: "var(--earth-text-muted)" }}>
                                     <span className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
-                                        PDF
-                                    </span>
-                                    <span className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
-                                        DOCX
-                                    </span>
-                                    <span className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
-                                        TXT
+                                        PDF uniquement
                                     </span>
                                 </div>
                             </div>
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept=".pdf,.docx,.txt"
+                                accept=".pdf"
                                 onChange={handleFileUpload}
+                                disabled={isExtracting}
                                 className="hidden"
                             />
                         </div>
@@ -206,9 +252,20 @@ export default function AppPage(): React.JSX.Element {
                             <h1 className="text-4xl font-bold mb-6 heading-gradient" style={{ fontFamily: "var(--font-heading)" }}>
                                 Configuration
                             </h1>
-                            <p className="text-xl" style={{ color: "var(--earth-text-secondary)" }}>
+                            <p className="text-xl mb-8" style={{ color: "var(--earth-text-secondary)" }}>
                                 Ajoutez l'offre d'emploi pour l'analyse
                             </p>
+
+                            {/* Progress indicators */}
+                            <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                    <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
+                                    <span style={{ color: "var(--earth-text-muted)" }}>Étape 2/3</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--earth-border)" }}>
+                                    <div className="h-2 rounded-full transition-all duration-500" style={{ backgroundColor: "var(--earth-gold)", width: "66%" }}></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -272,65 +329,68 @@ Exemple :
                                     </div>
                                 </div>
 
-                                {cvFile && (
+                                {cvFile && extractionResult && (
                                     <div className="mb-8 p-6 rounded-2xl card-elevated">
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4 mb-4">
                                             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--earth-surface)", border: "2px solid var(--earth-gold)" }}>
                                                 <FileUp className="w-6 h-6 icon-gold" />
                                             </div>
                                             <div className="flex-1">
-                                                <p className="font-semibold text-lg" style={{ color: "var(--earth-text)", fontFamily: "var(--font-heading)" }}>{cvFile.name}</p>
+                                                <p className="font-semibold text-lg" style={{ color: "var(--earth-text)", fontFamily: "var(--font-heading)" }}>{extractionResult.fileName}</p>
                                                 <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>
-                                                    {(cvFile.size / 1024).toFixed(1)} KB • Prêt pour l'analyse
+                                                    {(extractionResult.fileSize / 1024).toFixed(1)} KB • {extractionResult.textLength} caractères • Prêt pour l'analyse
                                                 </p>
                                             </div>
                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
                                         </div>
+
+                                        {/* Texte extrait */}
+                                        <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-border)" }}>
+                                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                                Texte extrait du PDF :
+                                            </h4>
+                                            <div className="max-h-48 overflow-y-auto text-sm leading-relaxed" style={{ color: "var(--earth-text)" }}>
+                                                {extractionResult.text}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
-                                <div className="space-y-4">
-                                    <Button
-                                        onClick={handleAnalyze}
-                                        disabled={!jobDescription.trim() || isAnalyzing}
-                                        size="lg"
-                                        className="btn-primary w-full text-lg py-4 focus-ring"
-                                    >
-                                        {isAnalyzing ? (
-                                            <>
-                                                <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-                                                Analyse en cours...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Zap className="w-6 h-6 mr-3" />
-                                                Lancer l'analyse
-                                                <ChevronRight className="w-5 h-5 ml-2" />
-                                            </>
-                                        )}
-                                    </Button>
+                                {/* Boutons d'action */}
+                                {cvFile && extractionResult && (
+                                    <div className="space-y-4 mb-8">
+                                        <Button
+                                            onClick={handleAnalyze}
+                                            disabled={!jobDescription.trim() || isAnalyzing}
+                                            size="lg"
+                                            className="btn-primary w-full text-lg py-4 focus-ring"
+                                        >
+                                            {isAnalyzing ? (
+                                                <>
+                                                    <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                                                    Analyse en cours...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Zap className="w-6 h-6 mr-3" />
+                                                    Lancer l'analyse
+                                                    <ChevronRight className="w-5 h-5 ml-2" />
+                                                </>
+                                            )}
+                                        </Button>
 
-                                    <Button
-                                        onClick={resetApp}
-                                        variant="outline"
-                                        className="w-full py-3 focus-ring rounded-xl transition-all duration-300"
-                                        style={{ borderColor: "var(--earth-border-strong)", color: "var(--earth-text-secondary)" }}
-                                    >
-                                        <Upload className="w-4 h-4 mr-2" />
-                                        Changer de CV
-                                    </Button>
-                                </div>
+                                        <Button
+                                            onClick={resetApp}
+                                            variant="outline"
+                                            className="w-full py-3 focus-ring rounded-xl transition-all duration-300"
+                                            style={{ borderColor: "var(--earth-border-strong)", color: "var(--earth-text-secondary)" }}
+                                        >
+                                            <Upload className="w-4 h-4 mr-2" />
+                                            Changer de CV
+                                        </Button>
+                                    </div>
+                                )}
 
-                                {/* Progress indicators */}
-                                <div className="mt-8 p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
-                                    <div className="flex items-center justify-between text-sm mb-2">
-                                        <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
-                                        <span style={{ color: "var(--earth-text-muted)" }}>Étape 2/3</span>
-                                    </div>
-                                    <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--earth-border)" }}>
-                                        <div className="h-2 rounded-full transition-all duration-500" style={{ backgroundColor: "var(--earth-gold)", width: "66%" }}></div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -350,9 +410,20 @@ Exemple :
                             <p className="text-xl mb-4" style={{ color: "var(--earth-text-secondary)" }}>
                                 Votre CV avec annotations et suggestions
                             </p>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-gold)" }}>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-gold)" }}>
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
                                 <span className="text-sm font-medium text-gradient">Analyse terminée</span>
+                            </div>
+
+                            {/* Progress indicators - Étape 3 */}
+                            <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                    <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
+                                    <span style={{ color: "var(--earth-text-muted)" }}>Étape 3/3</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--earth-border)" }}>
+                                    <div className="h-2 rounded-full transition-all duration-500" style={{ backgroundColor: "var(--earth-gold)", width: "100%" }}></div>
+                                </div>
                             </div>
                         </div>
 
@@ -480,25 +551,130 @@ Exemple :
                             </div>
                         </div>
 
+                        {/* Analysis Results */}
+                        {analysisResult && (
+                            <div className="mt-12 space-y-8">
+                                {/* Summary */}
+                                <div className="card-modern p-8">
+                                    <h3 className="text-2xl font-bold mb-4" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                        Résumé de l'analyse
+                                    </h3>
+                                    <p className="text-lg leading-relaxed" style={{ color: "var(--earth-text)" }}>
+                                        {analysisResult.summary}
+                                    </p>
+                                </div>
+
+                                {/* Strengths and Weaknesses */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="card-modern p-6">
+                                        <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-secondary)", fontFamily: "var(--font-heading)" }}>
+                                            Points forts
+                                        </h4>
+                                        <ul className="space-y-2">
+                                            {analysisResult.strengths.map((strength, index) => (
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <div className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--earth-secondary)" }}></div>
+                                                    <span style={{ color: "var(--earth-text)" }}>{strength}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="card-modern p-6">
+                                        <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-accent)", fontFamily: "var(--font-heading)" }}>
+                                            Points à améliorer
+                                        </h4>
+                                        <ul className="space-y-2">
+                                            {analysisResult.weaknesses.map((weakness, index) => (
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <div className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--earth-accent)" }}></div>
+                                                    <span style={{ color: "var(--earth-text)" }}>{weakness}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Suggestions */}
+                                <div className="card-modern p-8">
+                                    <h3 className="text-2xl font-bold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                        Suggestions détaillées
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {analysisResult.suggestions.map((suggestion, index) => (
+                                            <div key={index} className="p-4 rounded-xl border-l-4" style={{
+                                                backgroundColor: "var(--earth-surface-elevated)",
+                                                borderLeftColor: suggestion.priority === 'high' ? 'var(--earth-accent)' :
+                                                    suggestion.priority === 'medium' ? 'var(--earth-gold)' : 'var(--earth-secondary)'
+                                            }}>
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <span className="font-semibold" style={{ color: "var(--earth-primary)" }}>
+                                                        {suggestion.section}
+                                                    </span>
+                                                    <span className="text-xs px-2 py-1 rounded-full" style={{
+                                                        backgroundColor: suggestion.priority === 'high' ? 'var(--earth-accent)' :
+                                                            suggestion.priority === 'medium' ? 'var(--earth-gold)' : 'var(--earth-secondary)',
+                                                        color: "var(--earth-primary)"
+                                                    }}>
+                                                        {suggestion.priority === 'high' ? 'Critique' :
+                                                            suggestion.priority === 'medium' ? 'Important' : 'Mineur'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm mb-2" style={{ color: "var(--earth-text-muted)" }}>
+                                                    <strong>Type:</strong> {suggestion.type === 'add' ? 'Ajouter' :
+                                                        suggestion.type === 'remove' ? 'Supprimer' :
+                                                            suggestion.type === 'improve' ? 'Améliorer' : 'Réécrire'}
+                                                </p>
+                                                <p className="text-sm" style={{ color: "var(--earth-text)" }}>
+                                                    {suggestion.suggestion}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Missing Skills */}
+                                {analysisResult.missingSkills.length > 0 && (
+                                    <div className="card-modern p-6">
+                                        <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-accent)", fontFamily: "var(--font-heading)" }}>
+                                            Compétences manquantes
+                                        </h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {analysisResult.missingSkills.map((skill, index) => (
+                                                <span key={index} className="px-3 py-1 rounded-full text-sm" style={{
+                                                    backgroundColor: "var(--earth-light)",
+                                                    color: "var(--earth-accent)",
+                                                    border: "1px solid var(--earth-accent)"
+                                                }}>
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Stats Summary */}
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="card-modern p-6 text-center">
-                                <div className="text-2xl font-bold text-gradient mb-2">85%</div>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Score de correspondance</p>
+                        {analysisResult && (
+                            <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="card-modern p-6 text-center">
+                                    <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.score}%</div>
+                                    <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Score de correspondance</p>
+                                </div>
+                                <div className="card-modern p-6 text-center">
+                                    <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.suggestions.length}</div>
+                                    <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Suggestions trouvées</p>
+                                </div>
+                                <div className="card-modern p-6 text-center">
+                                    <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.suggestions.filter(s => s.priority === 'high').length}</div>
+                                    <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Améliorations critiques</p>
+                                </div>
+                                <div className="card-modern p-6 text-center">
+                                    <div className="text-2xl font-bold text-gradient mb-2">+{analysisResult.improvementPotential}%</div>
+                                    <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Amélioration potentielle</p>
+                                </div>
                             </div>
-                            <div className="card-modern p-6 text-center">
-                                <div className="text-2xl font-bold text-gradient mb-2">12</div>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Suggestions trouvées</p>
-                            </div>
-                            <div className="card-modern p-6 text-center">
-                                <div className="text-2xl font-bold text-gradient mb-2">4</div>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Améliorations critiques</p>
-                            </div>
-                            <div className="card-modern p-6 text-center">
-                                <div className="text-2xl font-bold text-gradient mb-2">+25%</div>
-                                <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Amélioration potentielle</p>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </main>
