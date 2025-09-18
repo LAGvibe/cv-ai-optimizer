@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import pdf from 'pdf-parse';
 
 export async function POST(request: NextRequest) {
     try {
@@ -12,7 +13,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validation du type de fichier PDF
         if (file.type !== 'application/pdf') {
             return NextResponse.json(
                 { error: 'Type de fichier non supporté. Format accepté: PDF' },
@@ -20,8 +20,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validation de la taille (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             return NextResponse.json(
                 { error: 'Fichier trop volumineux. Taille maximum: 10MB' },
@@ -29,64 +28,48 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Pour l'instant, on simule l'extraction PDF avec un texte d'exemple
-        // TODO: Implémenter une vraie extraction PDF avec pdf-parse ou pdf2pic
-        const mockExtractedText = `LOUIS POTRON
-Développeur Full Stack
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
 
-CONTACT
-Email: louis.potron@email.com
-Téléphone: +33 6 12 34 56 78
-LinkedIn: linkedin.com/in/louispotron
+        const pdfData = await pdf(uint8Array);
+        const extractedText = pdfData.text;
 
-PROFIL PROFESSIONNEL
-Développeur passionné avec 3 ans d'expérience dans le développement web moderne. 
-Expert en React, Node.js et TypeScript. Passionné par les technologies émergentes 
-et l'amélioration continue des processus de développement.
+        const cleanedText = extractedText
+            .replace(/\s+/g, ' ')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim();
 
-EXPÉRIENCE PROFESSIONNELLE
-
-Développeur Full Stack - TechCorp (2022-2024)
-• Développement d'applications web avec React et Node.js
-• Gestion d'équipe de 3 développeurs
-• Mise en place de CI/CD avec GitHub Actions
-• Optimisation des performances (réduction de 40% du temps de chargement)
-
-Développeur Frontend - StartupXYZ (2021-2022)
-• Développement d'interfaces utilisateur avec React et TypeScript
-• Intégration d'APIs REST et GraphQL
-• Collaboration avec les équipes UX/UI
-
-COMPÉTENCES TECHNIQUES
-• Langages: JavaScript, TypeScript, Python, SQL
-• Frontend: React, Next.js, Vue.js, HTML5, CSS3, Tailwind CSS
-• Backend: Node.js, Express, FastAPI, PostgreSQL, MongoDB
-• Outils: Git, Docker, AWS, Vercel, Figma
-
-FORMATION
-Master en Informatique - Université de Paris (2019-2021)
-Licence en Mathématiques - Université de Paris (2016-2019)
-
-PROJETS PERSONNELS
-• Application de gestion de tâches avec React et Node.js
-• API REST pour e-commerce avec authentification JWT
-• Dashboard analytique avec D3.js et Chart.js`;
+        if (!cleanedText || cleanedText.length < 10) {
+            return NextResponse.json(
+                { error: 'Impossible d\'extraire du texte du PDF. Vérifiez que le fichier contient du texte.' },
+                { status: 400 }
+            );
+        }
 
         return NextResponse.json({
             success: true,
-            text: mockExtractedText,
+            text: cleanedText,
             fileName: file.name,
             fileSize: file.size,
             fileType: file.type,
-            textLength: mockExtractedText.length,
+            textLength: cleanedText.length,
+            pages: pdfData.numpages,
             timestamp: new Date().toISOString()
         });
 
     } catch (error) {
         console.error('Erreur route PDF:', error);
 
+        if (error instanceof Error) {
+            console.error('Message d\'erreur:', error.message);
+            console.error('Stack trace:', error.stack);
+        }
+
         return NextResponse.json(
-            { error: 'Erreur lors du traitement du fichier PDF' },
+            {
+                error: 'Erreur lors du traitement du fichier PDF',
+                details: error instanceof Error ? error.message : 'Erreur inconnue'
+            },
             { status: 500 }
         );
     }

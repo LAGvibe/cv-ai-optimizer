@@ -122,77 +122,93 @@
   }
 }
 
-/* Modern SaaS Theme with Premium Brown/Gold */
 .earth-theme {
-  /* Backgrounds */
   --earth-bg: #fefefe;
   --earth-surface: #ffffff;
-  --earth-surface-elevated: #fbfbfb;
+  --earth-surface-elevated: #f9fafb;
 
-  /* Borders */
-  --earth-border: #f0f0f0;
-  --earth-border-strong: #e8e8e8;
+  --earth-border: #d1d5db;
+  --earth-border-strong: #9ca3af;
 
-  /* Text Colors */
   --earth-text: #1a1a1a;
-  --earth-text-secondary: #4a5568;
-  --earth-text-muted: #718096;
-  --earth-text-light: #a0aec0;
+  --earth-text-secondary: #374151;
+  --earth-text-muted: #4a5568;
+  --earth-text-light: #6b7280;
 
-  /* Brand Colors - Brown/Gold Gradient */
   --earth-primary: #2d1810;
   --earth-secondary: #4a2c1a;
   --earth-accent: #8b5a3c;
 
-  /* Gold Gradient System */
   --earth-gold: #d4af37;
   --earth-gold-light: #f4e7a1;
   --earth-gold-dark: #b8941f;
   --earth-gold-gradient: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
   --earth-gold-gradient-hover: linear-gradient(135deg, #e6c659 0%, #c9a532 100%);
 
-  /* Button Colors */
   --earth-button-primary: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
   --earth-button-primary-hover: linear-gradient(135deg, #e6c659 0%, #c9a532 100%);
   --earth-button-primary-text: #2d1810;
 
-  /* Shadows & Effects */
-  --earth-shadow-sm: 0 1px 2px 0 rgba(45, 24, 16, 0.05);
-  --earth-shadow: 0 4px 6px -1px rgba(45, 24, 16, 0.1), 0 2px 4px -1px rgba(45, 24, 16, 0.06);
-  --earth-shadow-lg: 0 10px 15px -3px rgba(45, 24, 16, 0.1), 0 4px 6px -2px rgba(45, 24, 16, 0.05);
-  --earth-shadow-gold: 0 4px 14px 0 rgba(212, 175, 55, 0.25);
+  --earth-shadow-sm: 0 1px 3px 0 rgba(45, 24, 16, 0.1);
+  --earth-shadow: 0 4px 6px -1px rgba(45, 24, 16, 0.15), 0 2px 4px -1px rgba(45, 24, 16, 0.1);
+  --earth-shadow-lg: 0 10px 15px -3px rgba(45, 24, 16, 0.15), 0 4px 6px -2px rgba(45, 24, 16, 0.1);
+  --earth-shadow-gold: 0 4px 14px 0 rgba(212, 175, 55, 0.3);
 
-  /* Interactive States */
-  --earth-hover-overlay: rgba(212, 175, 55, 0.1);
-  --earth-focus-ring: rgba(212, 175, 55, 0.3);
+  --earth-hover-overlay: rgba(212, 175, 55, 0.15);
+  --earth-focus-ring: rgba(212, 175, 55, 0.5);
 
-  /* Fonts */
   --font-heading: var(--font-outfit);
   --font-body: var(--font-inter);
 }
 
-/* Annotations colors */
 .annotation-red {
-  background-color: rgba(239, 68, 68, 0.2);
-  border: 2px solid #ef4444;
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 2px solid #dc2626;
+  color: #dc2626;
 }
 
 .annotation-yellow {
-  background-color: rgba(245, 158, 11, 0.2);
-  border: 2px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 2px solid #d97706;
+  color: #d97706;
 }
 
 .annotation-orange {
-  background-color: rgba(249, 115, 22, 0.2);
-  border: 2px solid #f97316;
+  background-color: rgba(249, 115, 22, 0.15);
+  border: 2px solid #ea580c;
+  color: #ea580c;
 }
 
 .annotation-blue {
-  background-color: rgba(59, 130, 246, 0.2);
-  border: 2px solid #3b82f6;
+  background-color: rgba(59, 130, 246, 0.15);
+  border: 2px solid #2563eb;
+  color: #2563eb;
 }
 
-/* Modern SaaS Components */
+.priority-critical {
+  background-color: #dc2626;
+  color: white;
+  border: 1px solid #b91c1c;
+}
+
+.priority-important {
+  background-color: #ea580c;
+  color: white;
+  border: 1px solid #c2410c;
+}
+
+.priority-recommended {
+  background-color: #d97706;
+  color: white;
+  border: 1px solid #b45309;
+}
+
+.priority-optional {
+  background-color: #6b7280;
+  color: white;
+  border: 1px solid #4b5563;
+}
+
 .btn-primary {
   background: var(--earth-button-primary);
   color: var(--earth-button-primary-text);
@@ -313,9 +329,9 @@
 .focus-ring:focus {
   outline: none;
   box-shadow: 0 0 0 3px var(--earth-focus-ring);
+  border-color: var(--earth-gold);
 }
 
-/* Animation utilities */
 @keyframes bounce-gentle {
 
   0%,

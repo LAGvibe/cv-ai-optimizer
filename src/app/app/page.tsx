@@ -3,12 +3,87 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Settings, Upload, Target, Zap, Loader2, Eye, FileUp, AlertCircle, Sparkles, ChevronRight, Star } from "lucide-react";
+import { FileText, Settings, Upload, Target, Zap, Loader2, Eye, FileUp, AlertCircle, Sparkles, ChevronRight, Star, PlusCircle, MinusCircle, TrendingUp, PenSquare, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { extractTextFromFile, analyzeCV } from "@/lib/cv-api";
-import { CVAnalysis, TextExtractionResponse } from "@/types/cv-analysis";
+import { CVAnalysis, CVSuggestion, TextExtractionResponse } from "@/types/cv-analysis";
+
+const PRIORITY_ORDER: Record<CVSuggestion["priority"], number> = {
+    critique: 0,
+    important: 1,
+    recommandé: 2,
+    optionnel: 3,
+};
+
+const PRIORITY_META = {
+    critique: {
+        label: "Critique",
+        border: "#dc2626",
+        background: "linear-gradient(135deg, rgba(220,38,38,0.1), rgba(220,38,38,0.03))",
+        shadow: "0 10px 24px rgba(220,38,38,0.12)",
+        badgeClass: "priority-critical",
+    },
+    important: {
+        label: "Important",
+        border: "#ea580c",
+        background: "linear-gradient(135deg, rgba(234,88,12,0.1), rgba(234,88,12,0.03))",
+        shadow: "0 10px 24px rgba(234,88,12,0.12)",
+        badgeClass: "priority-important",
+    },
+    recommandé: {
+        label: "Recommandé",
+        border: "#d97706",
+        background: "linear-gradient(135deg, rgba(217,119,6,0.1), rgba(217,119,6,0.03))",
+        shadow: "0 10px 24px rgba(217,119,6,0.12)",
+        badgeClass: "priority-recommended",
+    },
+    optionnel: {
+        label: "Optionnel",
+        border: "#6b7280",
+        background: "linear-gradient(135deg, rgba(107,114,128,0.08), rgba(107,114,128,0.02))",
+        shadow: "0 8px 18px rgba(107,114,128,0.14)",
+        badgeClass: "priority-optional",
+    },
+} satisfies Record<CVSuggestion["priority"], { label: string; border: string; background: string; shadow: string; badgeClass: string }>;
+
+const SUGGESTION_TYPE_META = {
+    add: {
+        label: "Ajout",
+        icon: PlusCircle,
+        bg: "rgba(34,197,94,0.08)",
+        text: "#15803d",
+        border: "rgba(34,197,94,0.2)",
+    },
+    remove: {
+        label: "Suppression",
+        icon: MinusCircle,
+        bg: "rgba(239,68,68,0.08)",
+        text: "#b91c1c",
+        border: "rgba(239,68,68,0.2)",
+    },
+    improve: {
+        label: "Optimisation",
+        icon: TrendingUp,
+        bg: "rgba(37,99,235,0.08)",
+        text: "#1d4ed8",
+        border: "rgba(37,99,235,0.2)",
+    },
+    rewrite: {
+        label: "Réécriture",
+        icon: PenSquare,
+        bg: "rgba(217,119,6,0.08)",
+        text: "#b45309",
+        border: "rgba(217,119,6,0.2)",
+    },
+    correct: {
+        label: "Correction",
+        icon: CheckCheck,
+        bg: "rgba(14,165,233,0.08)",
+        text: "#0ea5e9",
+        border: "rgba(14,165,233,0.2)",
+    },
+} satisfies Record<CVSuggestion["type"], { label: string; icon: typeof PlusCircle; bg: string; text: string; border: string }>;
 
 type AppState = "upload" | "analyze" | "results";
 
@@ -35,7 +110,7 @@ export default function AppPage(): React.JSX.Element {
             setCvText(result.text);
             setExtractionResult(result);
 
-            toast.success("CV analysé avec succès !", { id: "extract" });
+            toast.success("CV importé avec succès !", { id: "extract" });
             setAppState("analyze");
         } catch (error) {
             console.error("Erreur extraction:", error);
@@ -88,16 +163,36 @@ export default function AppPage(): React.JSX.Element {
         setIsAnalyzing(true);
 
         try {
-            toast.loading("Analyse en cours...", { id: "analyze" });
+            toast.loading("Analyse en cours...", {
+                id: "analyze",
+                description: "Cela peut prendre jusqu'à une minute selon la longueur du CV."
+            });
 
             const result = await analyzeCV(cvText, jobDescription);
             setAnalysisResult(result.analysis);
 
-            toast.success("Analyse terminée !", { id: "analyze" });
+            if (process.env.NODE_ENV === 'development') {
+                toast.success("Analyse terminée ! (Mode dev - Rate limiting désactivé)", {
+                    id: "analyze",
+                    duration: 3000
+                });
+            } else {
+                toast.success("Analyse terminée !", { id: "analyze" });
+            }
+
             setAppState("results");
         } catch (error) {
             console.error("Erreur analyse:", error);
-            toast.error(error instanceof Error ? error.message : "Erreur lors de l'analyse", { id: "analyze" });
+
+            if (error instanceof Error && error.message.includes('Quota dépassé')) {
+                toast.error(error.message, {
+                    id: "analyze",
+                    duration: 8000,
+                    description: "Limite de 5 analyses par semaine atteinte"
+                });
+            } else {
+                toast.error(error instanceof Error ? error.message : "Erreur lors de l'analyse", { id: "analyze" });
+            }
         } finally {
             setIsAnalyzing(false);
         }
@@ -114,11 +209,13 @@ export default function AppPage(): React.JSX.Element {
         setExtractionResult(null);
     };
 
+    const sortedSuggestions = analysisResult
+        ? [...analysisResult.suggestions].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+        : [];
+
     return (
         <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #fafafa 0%, #ddca7d 100%)", color: "var(--earth-text)" }}>
-            {/* Enhanced Header */}
             <header className="relative">
-                {/* Background with subtle pattern */}
                 <div className="absolute inset-0 glass-effect border-b" style={{ borderColor: "var(--earth-border)" }}>
                     <div className="absolute inset-0 opacity-5" style={{
                         backgroundImage: `radial-gradient(circle at 20% 50%, var(--earth-gold) 0%, transparent 50%), 
@@ -147,7 +244,6 @@ export default function AppPage(): React.JSX.Element {
                         </Link>
 
                         <div className="flex items-center gap-6">
-                            {/* Navigation breadcrumb */}
                             <div className="hidden md:flex items-center gap-2 text-sm" style={{ color: "var(--earth-text-muted)" }}>
                                 <span>Accueil</span>
                                 <ChevronRight className="w-3 h-3" />
@@ -171,7 +267,6 @@ export default function AppPage(): React.JSX.Element {
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="container mx-auto px-6 py-12">
                 {appState === "upload" && (
                     <div className="max-w-4xl mx-auto">
@@ -190,7 +285,6 @@ export default function AppPage(): React.JSX.Element {
                                 Uploadez votre CV et commencez l'analyse
                             </p>
 
-                            {/* Progress indicators - Étape 1 */}
                             <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
                                 <div className="flex items-center justify-between text-sm mb-2">
                                     <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
@@ -256,7 +350,6 @@ export default function AppPage(): React.JSX.Element {
                                 Ajoutez l'offre d'emploi pour l'analyse
                             </p>
 
-                            {/* Progress indicators */}
                             <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
                                 <div className="flex items-center justify-between text-sm mb-2">
                                     <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
@@ -269,7 +362,6 @@ export default function AppPage(): React.JSX.Element {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            {/* Panel gauche - Offre d'emploi */}
                             <div className="card-modern p-8">
                                 <div className="flex items-center gap-4 mb-8">
                                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
@@ -313,7 +405,6 @@ Exemple :
                                 </div>
                             </div>
 
-                            {/* Panel droit - CV et bouton d'analyse */}
                             <div className="card-modern p-8">
                                 <div className="flex items-center gap-4 mb-8">
                                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
@@ -344,7 +435,6 @@ Exemple :
                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
                                         </div>
 
-                                        {/* Texte extrait */}
                                         <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-border)" }}>
                                             <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
                                                 Texte extrait du PDF :
@@ -356,7 +446,6 @@ Exemple :
                                     </div>
                                 )}
 
-                                {/* Boutons d'action */}
                                 {cvFile && extractionResult && (
                                     <div className="space-y-4 mb-8">
                                         <Button
@@ -397,7 +486,7 @@ Exemple :
                 )}
 
                 {appState === "results" && (
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-6xl mx-auto">
                         <div className="text-center mb-12 animate-fade-in-up">
                             <div className="flex items-center justify-center gap-3 mb-6">
                                 <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
@@ -408,14 +497,13 @@ Exemple :
                                 </h1>
                             </div>
                             <p className="text-xl mb-4" style={{ color: "var(--earth-text-secondary)" }}>
-                                Votre CV avec annotations et suggestions
+                                Voici les suggestions pour optimiser votre CV
                             </p>
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-gold)" }}>
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
                                 <span className="text-sm font-medium text-gradient">Analyse terminée</span>
                             </div>
 
-                            {/* Progress indicators - Étape 3 */}
                             <div className="max-w-md mx-auto p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
                                 <div className="flex items-center justify-between text-sm mb-2">
                                     <span style={{ color: "var(--earth-text-secondary)" }}>Progression</span>
@@ -427,134 +515,8 @@ Exemple :
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                            {/* Légende des couleurs */}
-                            <div className="card-modern p-6">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
-                                        <Target className="w-5 h-5" style={{ color: "var(--earth-primary)" }} />
-                                    </div>
-                                    <h3 className="text-lg font-bold" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                        Légende
-                                    </h3>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
-                                        <div className="w-4 h-4 rounded-full annotation-red"></div>
-                                        <div>
-                                            <span className="text-sm font-medium" style={{ color: "var(--earth-text)" }}>À supprimer</span>
-                                            <p className="text-xs" style={{ color: "var(--earth-text-muted)" }}>Éléments non pertinents</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
-                                        <div className="w-4 h-4 rounded-full annotation-yellow"></div>
-                                        <div>
-                                            <span className="text-sm font-medium" style={{ color: "var(--earth-text)" }}>Orthographe</span>
-                                            <p className="text-xs" style={{ color: "var(--earth-text-muted)" }}>Erreurs à corriger</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
-                                        <div className="w-4 h-4 rounded-full annotation-orange"></div>
-                                        <div>
-                                            <span className="text-sm font-medium" style={{ color: "var(--earth-text)" }}>À améliorer</span>
-                                            <p className="text-xs" style={{ color: "var(--earth-text-muted)" }}>Suggestions d'optimisation</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--earth-surface-elevated)" }}>
-                                        <div className="w-4 h-4 rounded-full annotation-blue"></div>
-                                        <div>
-                                            <span className="text-sm font-medium" style={{ color: "var(--earth-text)" }}>À réécrire</span>
-                                            <p className="text-xs" style={{ color: "var(--earth-text-muted)" }}>Reformulation nécessaire</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* PDF annoté (simulation) */}
-                            <div className="lg:col-span-3 card-modern p-8">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "var(--earth-gold-gradient)" }}>
-                                            <FileText className="w-6 h-6" style={{ color: "var(--earth-primary)" }} />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-bold" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                                CV annoté
-                                            </h2>
-                                            <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>12 suggestions trouvées</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm" style={{ color: "var(--earth-text-muted)" }}>
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--earth-gold)" }}></div>
-                                        Terminé • 3/3
-                                    </div>
-                                </div>
-
-                                {/* Simulation du PDF avec annotations modernes */}
-                                <div className="card-elevated p-10 min-h-[600px] relative">
-                                    <div className="space-y-6">
-                                        <div className="text-center border-b pb-6" style={{ borderColor: "var(--earth-border)" }}>
-                                            <h3 className="text-3xl font-bold mb-3" style={{ fontFamily: "var(--font-heading)" }}>Jean Dupont</h3>
-                                            <p className="text-lg" style={{ color: "var(--earth-text-secondary)" }}>Développeur Full Stack</p>
-                                            <p className="text-sm mt-2" style={{ color: "var(--earth-text-muted)" }}>jean.dupont@email.com • +33 6 12 34 56 78</p>
-                                        </div>
-
-                                        <div className="mt-8">
-                                            <h4 className="font-bold text-lg mb-4" style={{ fontFamily: "var(--font-heading)", color: "var(--earth-primary)" }}>Expérience Professionnelle</h4>
-                                            <div className="space-y-4">
-                                                <div className="p-4 rounded-xl annotation-orange relative">
-                                                    <div className="absolute -right-2 -top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "var(--earth-gold)", color: "var(--earth-primary)" }}>1</div>
-                                                    <strong className="text-lg">Développeur Senior chez TechCorp</strong> <span style={{ color: "var(--earth-text-muted)" }}>• 2020-2023</span>
-                                                    <p className="text-sm mt-2">Développement d'applications web avec React et Node.js, gestion d'équipe de 3 développeurs</p>
-                                                </div>
-                                                <div className="p-4 rounded-xl annotation-blue relative">
-                                                    <div className="absolute -right-2 -top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "var(--earth-gold)", color: "var(--earth-primary)" }}>2</div>
-                                                    <strong className="text-lg">Stagiaire chez StartupXYZ</strong> <span style={{ color: "var(--earth-text-muted)" }}>• 2019</span>
-                                                    <p className="text-sm mt-2">Apprentissage des technologies modernes et développement de features</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-8">
-                                            <h4 className="font-bold text-lg mb-4" style={{ fontFamily: "var(--font-heading)", color: "var(--earth-primary)" }}>Compétences Techniques</h4>
-                                            <div className="space-y-4">
-                                                <div className="p-4 rounded-xl annotation-yellow relative">
-                                                    <div className="absolute -right-2 -top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "var(--earth-gold)", color: "var(--earth-primary)" }}>3</div>
-                                                    <span className="font-medium">Langages :</span> JavaScript, TypeScript, React, Node.js, Python
-                                                </div>
-                                                <div className="p-4 rounded-xl annotation-red relative">
-                                                    <div className="absolute -right-2 -top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "var(--earth-gold)", color: "var(--earth-primary)" }}>4</div>
-                                                    <span className="font-medium">Bureautique :</span> Word, Excel, PowerPoint
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Button
-                                        onClick={resetApp}
-                                        className="btn-primary py-4 text-lg focus-ring"
-                                    >
-                                        <Sparkles className="w-5 h-5 mr-2" />
-                                        Nouvelle analyse
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        className="py-4 text-lg focus-ring rounded-xl transition-all duration-300"
-                                        style={{ borderColor: "var(--earth-gold)", color: "var(--earth-primary)" }}
-                                    >
-                                        <FileText className="w-5 h-5 mr-2" />
-                                        Exporter les suggestions
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Analysis Results */}
                         {analysisResult && (
                             <div className="mt-12 space-y-8">
-                                {/* Summary */}
                                 <div className="card-modern p-8">
                                     <h3 className="text-2xl font-bold mb-4" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
                                         Résumé de l'analyse
@@ -564,7 +526,43 @@ Exemple :
                                     </p>
                                 </div>
 
-                                {/* Strengths and Weaknesses */}
+                                {analysisResult.detailedMetrics && (
+                                    <div className="card-modern p-8">
+                                        <h3 className="text-2xl font-bold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                            Évaluation détaillée
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                            {Object.entries(analysisResult.detailedMetrics).map(([key, metric]) => (
+                                                <div key={key} className="p-4 rounded-xl" style={{ backgroundColor: "var(--earth-surface-elevated)", border: "1px solid var(--earth-border)" }}>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-semibold capitalize" style={{ color: "var(--earth-text-secondary)" }}>
+                                                            {key === 'experience' ? 'Expérience' :
+                                                                key === 'education' ? 'Formation' :
+                                                                    key === 'softSkills' ? 'Soft Skills' : 'Compétences Tech'}
+                                                        </span>
+                                                        <span className="text-lg font-bold" style={{ color: "var(--earth-primary)" }}>
+                                                            {metric.score}/{metric.maxScore}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full h-2 rounded-full mb-3" style={{ backgroundColor: "var(--earth-border)" }}>
+                                                        <div
+                                                            className="h-2 rounded-full transition-all duration-500"
+                                                            style={{
+                                                                backgroundColor: metric.score >= 8 ? "var(--earth-gold)" :
+                                                                    metric.score >= 6 ? "var(--earth-accent)" : "#dc2626",
+                                                                width: `${(metric.score / metric.maxScore) * 100}%`
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <p className="text-xs" style={{ color: "var(--earth-text-muted)" }}>
+                                                        {metric.comment}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="card-modern p-6">
                                         <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-secondary)", fontFamily: "var(--font-heading)" }}>
@@ -594,48 +592,9 @@ Exemple :
                                     </div>
                                 </div>
 
-                                {/* Suggestions */}
-                                <div className="card-modern p-8">
-                                    <h3 className="text-2xl font-bold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
-                                        Suggestions détaillées
-                                    </h3>
-                                    <div className="space-y-4">
-                                        {analysisResult.suggestions.map((suggestion, index) => (
-                                            <div key={index} className="p-4 rounded-xl border-l-4" style={{
-                                                backgroundColor: "var(--earth-surface-elevated)",
-                                                borderLeftColor: suggestion.priority === 'high' ? 'var(--earth-accent)' :
-                                                    suggestion.priority === 'medium' ? 'var(--earth-gold)' : 'var(--earth-secondary)'
-                                            }}>
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <span className="font-semibold" style={{ color: "var(--earth-primary)" }}>
-                                                        {suggestion.section}
-                                                    </span>
-                                                    <span className="text-xs px-2 py-1 rounded-full" style={{
-                                                        backgroundColor: suggestion.priority === 'high' ? 'var(--earth-accent)' :
-                                                            suggestion.priority === 'medium' ? 'var(--earth-gold)' : 'var(--earth-secondary)',
-                                                        color: "var(--earth-primary)"
-                                                    }}>
-                                                        {suggestion.priority === 'high' ? 'Critique' :
-                                                            suggestion.priority === 'medium' ? 'Important' : 'Mineur'}
-                                                    </span>
-                                                </div>
-                                                <p className="text-sm mb-2" style={{ color: "var(--earth-text-muted)" }}>
-                                                    <strong>Type:</strong> {suggestion.type === 'add' ? 'Ajouter' :
-                                                        suggestion.type === 'remove' ? 'Supprimer' :
-                                                            suggestion.type === 'improve' ? 'Améliorer' : 'Réécrire'}
-                                                </p>
-                                                <p className="text-sm" style={{ color: "var(--earth-text)" }}>
-                                                    {suggestion.suggestion}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Missing Skills */}
                                 {analysisResult.missingSkills.length > 0 && (
                                     <div className="card-modern p-6">
-                                        <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-accent)", fontFamily: "var(--font-heading)" }}>
+                                        <h4 className="text-xl font-bold mb-4" style={{ color: "var(--earth-text)", fontFamily: "var(--font-heading)" }}>
                                             Compétences manquantes
                                         </h4>
                                         <div className="flex flex-wrap gap-2">
@@ -651,12 +610,101 @@ Exemple :
                                         </div>
                                     </div>
                                 )}
+
+                                <div className="card-modern p-8">
+                                    <h3 className="text-2xl font-bold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                        Suggestions détaillées
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {sortedSuggestions.map((suggestion, index) => {
+                                            const typeMeta = SUGGESTION_TYPE_META[suggestion.type];
+                                            const priorityMeta = PRIORITY_META[suggestion.priority];
+                                            const TypeIcon = typeMeta.icon;
+
+                                            return (
+                                                <div
+                                                    key={`${suggestion.section}-${index}`}
+                                                    className="p-5 rounded-xl border-l-4 transition-transform duration-200 hover:-translate-y-1"
+                                                    style={{
+                                                        background: priorityMeta.background,
+                                                        borderLeftColor: priorityMeta.border,
+                                                        boxShadow: priorityMeta.shadow,
+                                                    }}
+                                                >
+                                                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
+                                                                style={{
+                                                                    backgroundColor: "var(--earth-surface)",
+                                                                    color: priorityMeta.border,
+                                                                    border: `1px solid ${priorityMeta.border}`
+                                                                }}
+                                                            >
+                                                                {(index + 1).toString().padStart(2, "0")}
+                                                            </span>
+                                                            <span
+                                                                className="flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border"
+                                                                style={{
+                                                                    backgroundColor: typeMeta.bg,
+                                                                    color: typeMeta.text,
+                                                                    borderColor: typeMeta.border
+                                                                }}
+                                                            >
+                                                                <TypeIcon className="w-4 h-4" />
+                                                                {typeMeta.label}
+                                                            </span>
+                                                        </div>
+                                                        <span className={`text-xs px-2 py-1 rounded-full ${priorityMeta.badgeClass}`}>
+                                                            {priorityMeta.label}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-lg font-semibold mb-2" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
+                                                        {suggestion.suggestion}
+                                                    </h4>
+                                                    <p className="text-xs uppercase tracking-[0.16em] mb-3" style={{ color: "var(--earth-text-muted)" }}>
+                                                        Zone ciblée&nbsp;: {suggestion.section}
+                                                    </p>
+                                                    {suggestion.text && (
+                                                        <div className="p-3 rounded-lg mb-3" style={{ backgroundColor: "var(--earth-surface)", border: "1px dashed var(--earth-border)" }}>
+                                                            <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--earth-text-muted)" }}>
+                                                                Constat actuel
+                                                            </p>
+                                                            <p className="text-sm" style={{ color: "var(--earth-text)" }}>
+                                                                {suggestion.text}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {suggestion.rationale && (
+                                                        <p className="text-sm mb-2" style={{ color: "var(--earth-text-muted)" }}>
+                                                            <strong>Pourquoi :</strong> {suggestion.rationale}
+                                                        </p>
+                                                    )}
+                                                    {suggestion.impact && (
+                                                        <p className="text-sm mb-2" style={{ color: "var(--earth-text-muted)" }}>
+                                                            <strong>Impact :</strong> {suggestion.impact}
+                                                        </p>
+                                                    )}
+                                                    {suggestion.exactReplacement && (
+                                                        <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor: "var(--earth-surface)", border: "1px solid var(--earth-gold)" }}>
+                                                            <p className="text-xs font-semibold mb-1" style={{ color: "var(--earth-primary)" }}>
+                                                                Formulation exacte à copier
+                                                            </p>
+                                                            <p className="text-sm font-mono" style={{ color: "var(--earth-text)" }}>
+                                                                "{suggestion.exactReplacement}"
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         )}
 
-                        {/* Stats Summary */}
                         {analysisResult && (
-                            <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="card-modern p-6 text-center">
                                     <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.score}%</div>
                                     <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Score de correspondance</p>
@@ -666,12 +714,8 @@ Exemple :
                                     <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Suggestions trouvées</p>
                                 </div>
                                 <div className="card-modern p-6 text-center">
-                                    <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.suggestions.filter(s => s.priority === 'high').length}</div>
+                                    <div className="text-2xl font-bold text-gradient mb-2">{analysisResult.suggestions.filter(s => s.priority === 'critique').length}</div>
                                     <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Améliorations critiques</p>
-                                </div>
-                                <div className="card-modern p-6 text-center">
-                                    <div className="text-2xl font-bold text-gradient mb-2">+{analysisResult.improvementPotential}%</div>
-                                    <p className="text-sm" style={{ color: "var(--earth-text-muted)" }}>Amélioration potentielle</p>
                                 </div>
                             </div>
                         )}
@@ -679,9 +723,7 @@ Exemple :
                 )}
             </main>
 
-            {/* Enhanced Footer */}
             <footer className="relative mt-20">
-                {/* Background with subtle pattern */}
                 <div className="absolute inset-0 border-t" style={{ borderColor: "var(--earth-border)", backgroundColor: "var(--earth-surface-elevated)" }}>
                     <div className="absolute inset-0 opacity-3" style={{
                         backgroundImage: `radial-gradient(circle at 10% 20%, var(--earth-gold) 0%, transparent 50%), 
@@ -692,7 +734,6 @@ Exemple :
 
                 <div className="relative container mx-auto px-6 py-16">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-                        {/* Brand Section */}
                         <div className="text-center md:text-left">
                             <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
                                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "var(--earth-gold-gradient)" }}>
@@ -710,7 +751,6 @@ Exemple :
                             </p>
                         </div>
 
-                        {/* Quick Links */}
                         <div className="text-center">
                             <h4 className="font-semibold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
                                 Navigation
@@ -728,7 +768,6 @@ Exemple :
                             </div>
                         </div>
 
-                        {/* Tech Stack */}
                         <div className="text-center md:text-right">
                             <h4 className="font-semibold mb-6" style={{ color: "var(--earth-primary)", fontFamily: "var(--font-heading)" }}>
                                 Technologies
@@ -741,7 +780,6 @@ Exemple :
                         </div>
                     </div>
 
-                    {/* Bottom Section */}
                     <div className="border-t pt-8" style={{ borderColor: "var(--earth-border)" }}>
                         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2 text-sm" style={{ color: "var(--earth-text-muted)" }}>

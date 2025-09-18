@@ -1,0 +1,101 @@
+{
+  "score": 62,
+  "summary": "Bon profil technique IA/ML et dev full‑stack, mais manque de seniorité product (5 ans), leadership et expérience RH. Besoin de reformuler et quantifier les responsabilités produit et d'ajouter conformité RGPD.",
+  "strengths": [
+    "Master Big Data & ML",
+    "Expérience dev Full‑Stack/IA",
+    "Trilingue FR/EN/ES"
+  ],
+  "weaknesses": [
+    "Pas 5 ans PM",
+    "Peu d'expérience RH"
+  ],
+  "suggestions": [
+    {
+      "type": "correct",
+      "section": "En-tête / Titre",
+      "text": "Louis POTRON Diplômé Master 2, Trilingue Majeure Big Data & Machine Learning",
+      "suggestion": "Uniformiser et clarifier l'en‑tête : titre clair, langue, contact, localisation.",
+      "priority": "critique",
+      "rationale": "Première impression : le titre doit refléter l'objectif 'Responsable produit IA' et être lisible.",
+      "impact": "Augmente la clarté du CV et l'adéquation au poste visé, attire l'attention du recruteur.",
+      "exactReplacement": "Louis POTRON — Ingénieur Big Data & Machine Learning | Candidat Responsable Produit IA (FR/EN)\nParis • +33 6 70 44 79 86 • louis.potron.oe@gmail.com"
+    },
+    {
+      "type": "improve",
+      "section": "Profil / Résumé",
+      "text": "Aucun résumé synthétique en début de CV",
+      "suggestion": "Ajouter 2‑3 lignes résumé axé produit/IA: objectif poste, compétences clés, langues.",
+      "priority": "important",
+      "rationale": "Le rôle visé est produit ; un pitch synthétique montre l'adéquation stratégique du candidat.",
+      "impact": "Permet au recruteur de comprendre rapidement la motivation produit et le positionnement IA.",
+      "exactReplacement": "Profil : Ingénieur Big Data & IA, 3+ ans d'expérience technique en ML et API. Je souhaite évoluer en Responsable Produit IA, bilingue FR/EN, expert en prompt engineering et intégration d'APIs."
+    },
+    {
+      "type": "rewrite",
+      "section": "Expériences professionnelles — SOUSLIKOFF",
+      "text": "Mission Entrepreneur : Développement d’une application mobile à destination des clients viticulteurs",
+      "suggestion": "Reformuler pour montrer responsabilité produit (roadmap, KPIs, coordination équipe) et chiffrer résultats.",
+      "priority": "important",
+      "rationale": "Le poste requiert pilotage de roadmap et coordination d'une squad ; il faut démontrer ces compétences.",
+      "impact": "Augmente la crédibilité pour un rôle de PM et compense le manque d'ancienneté produit.",
+      "exactReplacement": "Responsable produit (MVP) : défini le cahier des charges, coordonné design & marketing, géré backlog et releases; livré l'app Flutter iOS/Android. KPIs : utilisateurs actifs [insérer], taux de rétention [insérer]."
+    },
+    {
+      "type": "add",
+      "section": "Compétences / Conformité",
+      "text": "Aucune mention explicite RGPD ou éthique IA",
+      "suggestion": "Ajouter compétences RGPD, gouvernance données et éthique IA, ainsi que KPI/OKR produit.",
+      "priority": "recommandé",
+      "rationale": "Fiche de poste demande conformité RGPD et éthique ; absence nuit à la candidature.",
+      "impact": "Montre capacité à garantir conformité et à définir indicateurs de succès produit.",
+      "exactReplacement": "Compétences complémentaires : RGPD & gouvernance des données, éthique IA, définition KPIs/OKR, A/B testing, validation produit."
+    },
+    {
+      "type": "improve",
+      "section": "Expériences professionnelles — BNP Paribas",
+      "text": "développement partie front-end avec le framework Angular et de tests automatisés",
+      "suggestion": "Mettre en avant rôle collaboratif agile, ownership technique et impact (réduction bugs, cadence).",
+      "priority": "recommandé",
+      "rationale": "Le recrutement cherche coordination en squad ; appuyer la collaboration et l'impact technique est utile.",
+      "impact": "Renforce la démonstration d'aptitudes à travailler en équipe pluridisciplinaire et à livrer valeur.",
+      "exactReplacement": "Ingénieur Front‑end (CPL9) — Développé front Angular et pipelines de tests (Serenity, Robot); coordonné avec QA et PO en agile; automatisation réduisant régressions et accélérant releases."
+    }
+  ],
+  "missingSkills": [
+    "Expérience Product Management 5+ ans",
+    "Leadership / gestion d'équipes",
+    "Expérience RH / HRTech",
+    "Maîtrise RGPD appliquée produit",
+    "Roadmap & définition KPI/OKR"
+  ],
+  "improvementPotential": 75,
+  "analysisDate": "2025-09-18T09:57:25.563Z",
+  "jobMatch": {
+    "technicalMatch": 80,
+    "experienceMatch": 25,
+    "softSkillsMatch": 60
+  },
+  "detailedMetrics": {
+    "experience": {
+      "score": 3,
+      "maxScore": 10,
+      "comment": "Rôles techniques pertinents mais manque la séniorité et responsabilités officielles en product management."
+    },
+    "education": {
+      "score": 9,
+      "maxScore": 10,
+      "comment": "Master M2 Big Data & ML et semestre international, solide formation technique."
+    },
+    "softSkills": {
+      "score": 6,
+      "maxScore": 10,
+      "comment": "Montre autonomie et esprit critique; leadership peu explicité et à renforcer."
+    },
+    "technicalSkills": {
+      "score": 8,
+      "maxScore": 10,
+      "comment": "Compétences IA, API, ML et dev full‑stack solides; Dataiku/ML tools présents mais MLOps partiel."
+    }
+  }
+}

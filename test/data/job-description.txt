@@ -1,0 +1,9 @@
+Fiche de poste : Responsable produit IA (Paris, CDI)
+
+Notre scale-up conçoit une plateforme SaaS d'optimisation RH qui aide les entreprises à mieux exploiter leurs données candidats. Vous serez en charge de piloter la roadmap produit sur les modules d'analyse automatique de CV et de matching avec les offres d'emploi. Missions principales :
+- définir la vision produit et les indicateurs de succès en lien avec la direction
+- coordonner une squad pluridisciplinaire (design, data, ingénierie) en mode agile
+- traduire les retours utilisateurs en évolutions concrètes et priorisées
+- garantir la conformité réglementaire (RGPD) et l'éthique d'utilisation de l'IA
+
+Profil recherché : minimum 5 ans d'expérience en product management, forte appétence pour la data et les sujets IA, sens du leadership, excellentes capacités de communication en français et en anglais. Une expérience en RH ou HRTech est un plus.
